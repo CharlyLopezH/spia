@@ -1,0 +1,116 @@
+{% extends 'empleados/base.html' %}
+
+{% block title %}Disponer días — {{ empleado.nombres }} {{ empleado.apellidos }} - SEPIA{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+
+        {# --- Encabezado --- #}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="mb-0">Disponer días</h4>
+                <small class="text-muted">
+                    {{ empleado.codigo }} — {{ empleado.apellidos }} {{ empleado.nombres }}
+                </small>
+            </div>
+            <a href="{% url 'movimientos:kardex_periodo' empleado.id anio_actual %}"
+               class="btn btn-outline-secondary btn-sm">
+                ← Volver al kardex
+            </a>
+        </div>
+
+        {# --- Info de la bolsa --- #}
+        <div class="card shadow-sm mb-3 border-{{ concepto.color_badge }}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small text-uppercase">
+                            Bolsa de {{ concepto.clave }}
+                        </div>
+                        <div class="fw-semibold">{{ concepto.concepto }}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted small">Saldo disponible</div>
+                        <div class="fs-4 fw-bold text-{{ concepto.color_badge }}">
+                            {{ saldo }} día{{ saldo|pluralize }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# --- Formulario --- #}
+        {% if saldo > 0 %}
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="row g-3">
+
+                            {# Fechas #}
+                            <div class="col-12">
+                                <label for="{{ form.fechas_texto.id_for_label }}" class="form-label">
+                                    {{ form.fechas_texto.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.fechas_texto }}
+                                {% if form.fechas_texto.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.fechas_texto.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Formato: <code>AAAA-MM-DD</code>. Una fecha por línea.
+                                    Cada fecha descuenta 1 día de la bolsa de {{ concepto.clave }}.
+                                    No se permiten sábados ni domingos.
+                                </div>
+                            </div>
+
+                            {# Motivo #}
+                            <div class="col-12">
+                                <label for="{{ form.motivo.id_for_label }}" class="form-label">
+                                    {{ form.motivo.label }}
+                                </label>
+                                {{ form.motivo }}
+                                {% if form.motivo.errors %}
+                                    <div class="text-danger small mt-1">{{ form.motivo.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                        </div>{# /row #}
+
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                Disponer días
+                            </button>
+                            <a href="{% url 'movimientos:kardex_periodo' empleado.id anio_actual %}"
+                               class="btn btn-outline-secondary btn-sm">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-warning">
+                Este empleado no tiene días disponibles en esta bolsa. No se puede disponer.
+            </div>
+        {% endif %}
+
+        <p class="text-muted small mt-3">
+            Los campos marcados con <span class="text-danger">*</span> son obligatorios.
+            El sistema validará que las fechas no estén duplicadas y que no excedas el saldo.
+        </p>
+
+    </div>
+</div>
+{% endblock %}

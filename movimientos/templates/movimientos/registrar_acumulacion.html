@@ -1,0 +1,130 @@
+{% extends 'empleados/base.html' %}
+
+{% block title %}{{ accion }} - SEPIA{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">{{ accion }}</h4>
+            <a href="{% url 'movimientos:kardex_index' %}" class="btn btn-outline-secondary btn-sm">
+                ← Volver al kardex
+            </a>
+        </div>
+
+        <div class="alert alert-success small">
+            El <strong>registro de acumulación</strong> sirve para dar de alta días que el
+            empleado <strong>se ganó por un evento</strong> (por ejemplo, puntualidad
+            perfecta mensual). El memo es obligatorio porque es el respaldo documental.
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                <div class="row g-3">
+
+                    {# Empleado #}
+                    <div class="col-md-8">
+                        <label for="{{ form.fk_empleado.id_for_label }}" class="form-label">
+                            {{ form.fk_empleado.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.fk_empleado }}
+                        {% if form.fk_empleado.errors %}
+                            <div class="text-danger small mt-1">{{ form.fk_empleado.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    {# Periodo (readonly) #}
+                    <div class="col-md-4">
+                        <label for="{{ form.periodo.id_for_label }}" class="form-label">
+                            {{ form.periodo.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.periodo }}
+                        {% if form.periodo.errors %}
+                            <div class="text-danger small mt-1">{{ form.periodo.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">
+                            Año en curso. No editable.
+                        </div>
+                    </div>
+
+                    {# Concepto #}
+                    <div class="col-md-8">
+                        <label for="{{ form.fk_concepto.id_for_label }}" class="form-label">
+                            {{ form.fk_concepto.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.fk_concepto }}
+                        {% if form.fk_concepto.errors %}
+                            <div class="text-danger small mt-1">{{ form.fk_concepto.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    {# Días ganados (readonly) #}
+                    <div class="col-md-4">
+                        <label for="{{ form.dias.id_for_label }}" class="form-label">
+                            {{ form.dias.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.dias }}
+                        {% if form.dias.errors %}
+                            <div class="text-danger small mt-1">{{ form.dias.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">
+                            Un día por mes ganado.
+                        </div>
+                    </div>
+
+                    {# Mes del periodo #}
+                    <div class="col-md-6">
+                        <label for="{{ form.mes.id_for_label }}" class="form-label">
+                            {{ form.mes.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.mes }}
+                        {% if form.mes.errors %}
+                            <div class="text-danger small mt-1">{{ form.mes.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">
+                            Mes del periodo durante el cual el empleado tuvo puntualidad perfecta.
+                        </div>
+                    </div>
+
+                    {# Memo #}
+                    <div class="col-md-6">
+                        <label for="{{ form.memo.id_for_label }}" class="form-label">
+                            {{ form.memo.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.memo }}
+                        {% if form.memo.errors %}
+                            <div class="text-danger small mt-1">{{ form.memo.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">
+                            Este memo aparecerá en el kardex como respaldo del movimiento.
+                        </div>
+                    </div>
+
+                </div>{# /row #}
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">Registrar</button>
+                        <a href="{% url 'movimientos:kardex_index' %}" class="btn btn-outline-secondary btn-sm">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <p class="text-muted small mt-2">
+            Los campos marcados con <span class="text-danger">*</span> son obligatorios.
+        </p>
+
+    </div>
+</div>
+{% endblock %}

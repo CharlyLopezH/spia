@@ -1,0 +1,169 @@
+{% extends 'empleados/base.html' %}
+{% block title %}Empleados - SEPIA{% endblock %}
+
+{% block content %}
+<!-- botón agregar empleados -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h4 class="mb-0">Listado de Empleados</h4>
+
+<div class="d-flex justify-content-between align-items-center mb-1">
+    <a href="{% url 'empleados:crear' %}" class="btn btn-primary btn-md" title="Agregar empleado">
+        +<i class="bi bi-person-add"></i>
+    </a>
+</div>
+
+
+</div>
+
+
+<form method="get" class="mb-3">
+    {# Fila 1: buscador a todo el ancho + botones #}
+    <div class="row g-2 mb-2">
+        <div class="col">
+            <input type="text" name="q" value="{{ query }}"
+                   class="form-control"
+                   placeholder="Buscar por código, nombre, apellidos o CURP...">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary">Buscar</button>
+            {% if query %}
+                <a href="{% url 'empleados:lista' %}" class="btn btn-outline-danger">Limpiar</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Fila 2: selector de registros por página #}
+    <div class="row">
+        <div class="col-auto">
+            <select name="per_page" class="form-select form-select-sm"
+                    onchange="this.form.submit()">
+                {% for opt in per_page_options %}
+                    <option value="{{ opt }}" {% if opt == per_page %}selected{% endif %}>
+                        {{ opt }} por página
+                    </option>
+                {% endfor %}
+            </select>
+        </div>        
+    </div>    
+</form>
+
+
+
+{# ---- Tabla ---- #}
+<div class="table-responsive">
+    <table class="table table-hover align-middle bg-white">
+        <thead class="table-light">
+            <tr>
+                <th>Código</th>
+                <th>Foto</th>
+                <th>Nombre</th>                
+                <th>CURP</th>
+                <th>Adscripción</th>
+                <th>Puesto</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for emp in page_obj %}
+            <tr>
+                <td>{{ emp.codigo }}</td>
+                <td>
+                    {% if emp.foto %}
+                    <img src="{{ emp.foto.url }}" alt="{{ emp.nombre_completo }}"
+                         class="rounded border"
+                         style="width: 40px; height: 40px; object-fit: cover;">
+                    {% else %}
+                    <span class="text-muted small">—</span>
+                    {% endif %}
+                </td>
+                <td>{{ emp.nombre_completo }}</td>
+                <td>{{ emp.CURP|default:"—" }}</td>
+                <td>{{ emp.fk_adscripcion|default:"—" }}</td>
+                <td>{{ emp.fk_puesto|default:"—" }}</td>
+                <td class="text-end">
+                <a href="{% url 'movimientos:kardex' emp.id %}" class="btn btn-sm btn-outline-secondary" title="Ver kardex">
+                    Kardex
+                </a>
+                    <a href="{% url 'empleados:editar' emp.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                    <a href="{% url 'empleados:eliminar' emp.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                </td>                
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    No se encontraron registros en la lista de  empleados.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ---- Paginador ---- #}
+{% if page_obj.has_other_pages %}
+<nav aria-label="Paginación de empleados">
+    <ul class="pagination pagination-sm justify-content-center">
+
+        {# Botón Primera #}
+        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+            <a class="page-link"
+               href="?page=1&q={{ query }}&per_page={{ per_page }}"
+               aria-label="Primera">|<<
+            </a>
+        </li>
+
+        {# Botón Anterior #}
+        <!-- <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+            <a class="page-link"               
+               href="?page={{ page_obj.number|add:'-1' }}&q={{ query }}&per_page={{ per_page }}"
+               aria-label="Anterior">&laquo;</a>
+        </li> -->
+
+
+        {# Números de página con elipsis #}
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ num }}&q={{ query }}&per_page={{ per_page }}">{{ num }}</a>
+                </li>
+            {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ num }}&q={{ query }}&per_page={{ per_page }}">{{ num }}</a>
+                </li>
+            {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {# Botón Siguiente #}
+        <!-- <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+            <a class="page-link"
+               href="?page={{ page_obj.number|add:'1' }}&q={{ query }}&per_page={{ per_page }}"
+               aria-label="Siguiente">&raquo;</a>
+        </li> -->
+
+
+
+        {# Botón Última #}
+        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+            <a class="page-link"
+               href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&per_page={{ per_page }}"
+               aria-label="Última">>>|</a>
+        </li>
+
+    </ul>
+</nav>
+{% endif %}
+
+<p class="text-muted small text-center">
+    Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros
+</p>
+{% endblock %}

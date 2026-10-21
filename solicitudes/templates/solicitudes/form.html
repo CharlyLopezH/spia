@@ -1,0 +1,193 @@
+{% extends 'empleados/base.html' %}
+
+{% block title %}{{ accion }} - SPIA{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">{{ accion }}</h4>
+            <a href="{% url 'solicitudes:lista' %}" class="btn btn-outline-secondary btn-sm">
+                ← Volver al listado
+            </a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {# --- CABECERA --- #}
+                    <h6 class="text-muted text-uppercase small mb-3">Datos de la solicitud</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.folio.label }} *</label>
+                            {{ form.folio }}
+                            {% if form.folio.errors %}
+                                <div class="text-danger small">{{ form.folio.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">{{ form.fk_empleado.label }} *</label>
+                            {{ form.fk_empleado }}
+                            {% if form.fk_empleado.errors %}
+                                <div class="text-danger small">{{ form.fk_empleado.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.fecha_solicitud.label }} *</label>
+                            {{ form.fecha_solicitud }}
+                            {% if form.fecha_solicitud.errors %}
+                                <div class="text-danger small">{{ form.fecha_solicitud.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ form.motivo.label }}</label>
+                            {{ form.motivo }}
+                            {% if form.motivo.errors %}
+                                <div class="text-danger small">{{ form.motivo.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# --- DETALLES (FORMSET) --- #}
+                    <h6 class="text-muted text-uppercase small mb-3">Días solicitados</h6>
+                    
+                    {{ formset.management_form }}
+                    
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-bordered" id="tabla-detalles">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Concepto</th>
+                                    <th>Fecha Aplicación</th>
+                                    <th>Días</th>
+                                    <th>Nota</th>
+                                    <th class="text-center">Eliminar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for f in formset %}
+                                <tr class="fila-detalle">
+                                    <td>{{ f.fk_concepto }} {{ f.fk_concepto.errors }}</td>
+                                    <td>{{ f.fecha }} {{ f.fecha.errors }}</td>
+                                    <td>{{ f.dias }} {{ f.dias.errors }}</td>
+                                    <td>{{ f.nota }} {{ f.nota.errors }}</td>
+                                    
+                                    <td class="text-center">
+                                        {# Ocultamos el checkbox original de Django #}
+                                        <div class="d-none">
+                                            {{ f.DELETE }}
+                                        </div>
+                                        
+                                        {# Botón visual de basura #}
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila" title="Eliminar este día">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        
+                                        {# Campos ocultos requeridos #}
+                                        {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+                                    </td>
+                                </tr>                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btn-agregar-fila">
+                                <i class="bi bi-plus-circle"></i> Agregar otro día
+                            </button>
+                        </div>
+
+                        {# Plantilla HTML oculta para nuevas filas #}
+<table style="display: none;">
+    <tbody id="template-fila">
+        <tr class="fila-detalle">
+            <td>{{ formset.empty_form.fk_concepto }}</td>
+            <td>{{ formset.empty_form.fecha }}</td>
+            <td>{{ formset.empty_form.dias }}</td>
+            <td>{{ formset.empty_form.nota }}</td>
+            <td class="text-center">
+                <div class="d-none">{{ formset.empty_form.DELETE }}</div>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila" title="Eliminar este día">
+                    <i class="bi bi-trash"></i>
+                </button>
+                {% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+                    </div>
+                    
+                    {% if formset.non_form_errors %}
+                        <div class="alert alert-danger">
+                            {{ formset.non_form_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">Guardar Solicitud</button>
+                        <a href="{% url 'solicitudes:lista' %}" class="btn btn-outline-secondary btn-sm">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const btnAgregar = document.getElementById('btn-agregar-fila');
+        const tablaDetalles = document.querySelector('#tabla-detalles tbody');
+        const templateFila = document.getElementById('template-fila').innerHTML;
+        const totalFormsInput = document.querySelector('#id_detalles-TOTAL_FORMS');
+        
+        // 1. Lógica para Agregar Filas
+        btnAgregar.addEventListener('click', function() {
+            let formCount = parseInt(totalFormsInput.value);
+            // Reemplazamos el __prefix__ de la plantilla por el número de formulario actual
+            let nuevaFilaHtml = templateFila.replace(/__prefix__/g, formCount);
+            
+            // Insertamos la nueva fila en la tabla
+            tablaDetalles.insertAdjacentHTML('beforeend', nuevaFilaHtml);
+            
+            // Incrementamos el contador de formularios de Django
+            totalFormsInput.value = formCount + 1;
+            
+            // Volvemos a enlazar los eventos de eliminar a la nueva fila
+            enlazarBotonEliminar();
+        });
+
+        // 2. Lógica para Eliminar Filas
+        function enlazarBotonEliminar() {
+            const botonesEliminar = document.querySelectorAll('.btn-eliminar-fila');
+            botonesEliminar.forEach(boton => {
+                // Removemos el evento anterior para no duplicarlo (si es una fila nueva)
+                boton.removeEventListener('click', eliminarFila);
+                boton.addEventListener('click', eliminarFila);
+            });
+        }
+
+        function eliminarFila() {
+            const fila = this.closest('.fila-detalle');
+            fila.style.display = 'none';
+            
+            const checkboxDelete = fila.querySelector('input[type="checkbox"][name$="-DELETE"]');
+            if (checkboxDelete) {
+                checkboxDelete.checked = true;
+            }
+            
+            const inputs = fila.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                if (input.type !== 'checkbox' && input.type !== 'hidden') {
+                    input.value = '';
+                }
+            });
+        }
+
+        // Inicializamos los eventos al cargar la página
+        enlazarBotonEliminar();
+    });
+</script>
+
+{% endblock %}

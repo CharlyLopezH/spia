@@ -1,0 +1,162 @@
+{% extends 'empleados/base.html' %}
+{% block title %}Kardex {{ empleado.nombres }} {{ empleado.apellidos }} - SEPIA{% endblock %}
+
+{% block content %}
+
+{# --- Encabezado con filtros --- #}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-0">Kardex de días</h4>
+        <small class="text-muted">
+            {{ empleado.codigo }} — {{ empleado.apellidos }} {{ empleado.nombres }}
+        </small>
+    </div>
+    <div>
+        <a href="{% url 'movimientos:calendario_empleado' empleado.id %}"
+           class="btn btn-outline-primary btn-sm"
+           title="Ver calendario de consumos">
+            <i class="bi bi-calendar3"></i>
+            Ver calendario
+        </a>
+        <a href="{% url 'movimientos:kardex_index' %}" class="btn btn-outline-secondary btn-sm">
+            ← Cambiar empleado
+        </a>
+    </div>
+</div>
+
+{# --- Selector de periodo --- #}
+<form method="get" class="row g-2 mb-4">
+    <div class="col-auto">
+        <label class="col-form-label col-form-label-sm">Periodo:</label>
+    </div>
+    <div class="col-auto">
+        <select name="periodo" class="form-select form-select-sm" style="min-width: 120px;">
+            {% for p in periodos %}
+                <option value="{{ p }}" {% if p == periodo %}selected{% endif %}>
+                    {{ p }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Cambiar</button>
+    </div>
+</form>
+{# --- Tarjetas de saldo por concepto --- #}
+<div class="row g-3 mb-4">
+{% for t in tarjetas %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card shadow-sm h-100 border-{{ t.concepto.color_badge }}">
+            <div class="card-body text-center">
+                <div class="text-muted small text-uppercase">{{ t.concepto.clave }}</div>
+                <div class="fw-semibold mb-3" style="font-size: 0.95rem;">
+                    {{ t.concepto.concepto }}
+                </div>
+                <div>
+                    <span class="badge bg-info text-dark fs-6 px-3 py-2">
+                        {{ t.saldo }} día{{ t.saldo|pluralize }}
+                    </span>
+                </div>
+                <div class="text-muted small mt-2">disponibles</div>
+                {# Botón para acumular (solo en conceptos por evento PPR) #}
+                        {# Nota informativa según el origen del concepto #}
+                        {# Nota informativa según el origen del concepto #}
+                        {% if t.concepto.dias_otorgamiento_default > 0 %}
+                        {% elif t.concepto.clave == 'VAP' %}
+                        {% endif %}
+                        {# Botón para acumular (solo en conceptos por evento) #}
+                {# Botones de acción #}
+                {% if t.concepto.es_por_evento or t.saldo > 0 %}
+                    <div class="mt-auto pt-2">
+                        <div class="btn-group w-100" role="group">
+
+                            {# Botón "Añadir" (solo conceptos por evento) #}
+                            {% if t.concepto.es_por_evento %}
+                                <a href="{% url 'movimientos:registrar_acumulacion' %}?empleado_id={{ empleado.id }}"
+                                class="btn btn-sm btn-outline-success"
+                                title="Registrar día ganado por evento">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Añadir
+                                </a>
+                            {% endif %}
+
+                            {# Botón "Disponer" (solo si hay saldo > 0) #}
+                            {% if t.saldo > 0 %}
+                                <a href="{% url 'movimientos:disponer_dias' empleado.id t.concepto.id %}"
+                                class="btn btn-sm btn-outline-primary"
+                                title="Disponer días de esta bolsa">
+                                    <i class="bi bi-dash-circle"></i>
+                                    Disponer
+                                </a>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                {% endif %}               
+                <!-- {% if t.concepto.clave == 'ECO' and t.saldo > 0 %}
+                    <div class="mt-auto pt-2">
+                        <a href="{% url 'movimientos:disponer_dias' empleado.id t.concepto.id %}"
+                           class="btn btn-sm btn-outline-primary"
+                           title="Disponer días de esta bolsa">
+                            <i class="bi bi-dash-circle"></i>
+                            Disponer
+                        </a>
+                    </div>
+                {% endif %} -->
+                        
+                </div>
+        </div>
+    </div>
+{% endfor %}</div>
+
+{# --- Total --- #}
+<div class="text-center my-4">
+    <span class="badge bg-info text-dark fs-5 px-3 py-2">
+        {{ total_disponible }} día{{ total_disponible|pluralize }} disponible{{ total_disponible|pluralize }}
+    </span>
+</div>
+<hr/>
+{# --- Tabla de movimientos (kardex) --- #}
+<div class="table-responsive">
+    <table class="table table-hover align-middle bg-white">
+        <thead class="table-light">
+            <tr>
+                <th>Fecha</th>
+                <th>Concepto</th>
+                <th>Tipo</th>
+                <th class="text-end">Entrada</th>
+                <th class="text-end">Salida</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in movimientos %}
+            <tr>
+                <td>{{ m.fecha|date:"d/m/Y" }}</td>
+                <td>
+                    <span class="badge bg-{{ m.fk_concepto.color_badge }}">
+                        {{ m.fk_concepto.clave }}
+                    </span>
+                    <span class="small">{{ m.fk_concepto.concepto }}</span>
+                </td>
+                <td>{{ m.get_tipo_movimiento_display }}</td>
+                <td class="text-end text-success">
+                    {% if m.dias > 0 %}{{ m.dias}}{% endif %}
+                </td>
+                <td class="text-end text-danger">
+                    {% if m.dias < 0 %}{{ m.dias}}{% endif %}
+                </td>
+                <td class="small text-muted">{{ m.descripcion|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    No hay movimientos en el periodo {{ periodo }}.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

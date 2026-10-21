@@ -1,0 +1,157 @@
+{% extends 'empleados/base.html' %}
+
+{% block title %}Inicio - SPIA{% endblock %}
+
+{% block content %}
+
+{# --- Bienvenida --- #}
+<div class="mb-4">
+    <h3 class="mb-1">Bienvenido a SPIA</h3>
+    <p class="text-muted mb-0">
+        Seguimiento a Permisos e Incidencias de Asistencia
+    </p>
+</div>
+
+{# --- Tarjetas de indicadores --- #}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted small text-uppercase">Empleados activos</div>
+                        <div class="fs-1 fw-bold text-primary">
+                            {{ total_empleados_activos }}
+                        </div>
+                    </div>
+                    <div class="fs-1 text-primary opacity-25">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+                <a href="{% url 'empleados:lista' %}" class="small text-decoration-none">
+                    Ver listado →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted small text-uppercase">Movimientos del mes</div>
+                        <div class="fs-1 fw-bold text-info">
+                            {{ movimientos_del_mes }}
+                        </div>
+                    </div>
+                    <div class="fs-1 text-info opacity-25">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </div>
+                </div>
+                <a href="{% url 'movimientos:kardex_index' %}" class="small text-decoration-none">
+                    Ver kardex →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted small text-uppercase">Solicitudes pendientes</div>
+                        <div class="fs-1 fw-bold text-warning">
+                            {{ solicitudes_pendientes }}
+                        </div>
+                    </div>
+                    <div class="fs-1 text-warning opacity-25">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                </div>
+                <a href="{% url 'solicitudes:lista' %}" class="small text-decoration-none">
+                    Ver solicitudes →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# --- Accesos rápidos --- #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="text-muted text-uppercase small mb-3">Accesos rápidos</h6>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'movimientos:kardex_index' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-journal-text"></i> Kardex
+            </a>
+            <a href="{% url 'movimientos:carga_inicial' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-down-circle"></i> Carga inicial
+            </a>
+            <a href="{% url 'movimientos:asignacion_discrecional' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> Asignación Directa
+            </a>
+            <a href="{% url 'movimientos:registrar_acumulacion' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-award"></i> Registrar PPR
+            </a>
+            <a href="{% url 'empleados:lista' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-people"></i> Empleados
+            </a>
+        </div>
+    </div>
+</div>
+
+{# --- Últimos movimientos --- #}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="text-muted text-uppercase small mb-0">Últimos movimientos registrados</h6>
+        </div>
+
+        {% if ultimos_movimientos %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Empleado</th>
+                            <th>Concepto</th>
+                            <th>Tipo</th>
+                            <th class="text-end">Días</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in ultimos_movimientos %}
+                        <tr>
+                            <td class="small">{{ m.fecha|date:"d/m/Y" }}</td>
+                            <td class="small">
+                                {% if m.fk_empleado %}
+                                    {{ m.fk_empleado.codigo }} — {{ m.fk_empleado.apellidos }} {{ m.fk_empleado.nombres }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="small">
+                                <span class="badge bg-{{ m.fk_concepto.color_badge }}">
+                                    {{ m.fk_concepto.clave }}
+                                </span>
+                            </td>
+                            <td class="small">{{ m.get_tipo_movimiento_display }}</td>
+                            <td class="small text-end {% if m.dias > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {% if m.dias > 0 %}+{% endif %}{{ m.dias }}
+                            </td>
+                            <td class="small text-muted">{{ m.descripcion|default:"—"|truncatechars:40 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted small mb-0">Aún no hay movimientos registrados.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
