@@ -62,6 +62,12 @@ class Solicitud(models.Model):
         """Suma los días de todos los detalles."""
         return sum(det.dias for det in self.detalles.all())
 
+    def conceptos_involucrados(self):
+        """Devuelve una lista de los conceptos únicos involucrados en la solicitud."""
+        # Usamos un set para evitar duplicados si hay varios días del mismo concepto
+        conceptos = {det.fk_concepto for det in self.detalles.all()}
+        return list(conceptos)    
+
 
 class SolicitudDetalle(models.Model):
 

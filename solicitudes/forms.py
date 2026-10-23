@@ -7,6 +7,7 @@ from catalogos.models import CatDiasConcepto
 
 from .models import Solicitud, SolicitudDetalle
 
+from django.forms.models import BaseInlineFormSet
 
 class SolicitudForm(forms.ModelForm):
     class Meta:
@@ -43,10 +44,45 @@ class SolicitudDetalleForm(forms.ModelForm):
         cleaned_data = super().clean()
         fecha = cleaned_data.get('fecha')
         
+        # Solo validamos fin de semana a nivel de fila
         if fecha and fecha.weekday() in (5, 6):
             self.add_error('fecha', 'No se permiten sábados ni domingos.')
             
         return cleaned_data
+
+class BaseSolicitudDetalleFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+
+        # Diccionario para sumar los días solicitados por concepto
+        dias_por_concepto = {}
+
+        for form in self.forms:
+            # Ignorar formularios vacíos o marcados para eliminar
+            if not form.cleaned_data or form.cleaned_data.get('DELETE'):
+                continue
+
+            concepto = form.cleaned_data.get('fk_concepto')
+            dias = form.cleaned_data.get('dias', 0)
+
+            if concepto:
+                if concepto.id not in dias_por_concepto:
+                    dias_por_concepto[concepto.id] = {
+                        'clave': concepto.clave,
+                        'dias': 0,
+                        'max': concepto.max_dias_por_periodo
+                    }
+                dias_por_concepto[concepto.id]['dias'] += dias
+
+        # Validar contra la regla del catálogo
+        for c_id, datos in dias_por_concepto.items():
+            if datos['max'] is not None and datos['dias'] > datos['max']:
+                raise forms.ValidationError(
+                    f"Error en la solicitud: Estás solicitando {datos['dias']} día(s) de {datos['clave']}, "
+                    f"pero el máximo permitido por periodo es {datos['max']}."
+                )    
 
 
 SolicitudDetalleFormSet = inlineformset_factory(

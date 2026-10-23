@@ -41,3 +41,13 @@ def lista_solicitudes(request):
     return render(request, 'solicitudes/lista.html', {
         'solicitudes': Solicitud.objects.all().order_by('-fecha_solicitud')
     })
+
+def detalle_solicitud(request, pk):
+    """
+    Muestra el detalle de una solicitud y permite gestionarla.
+    """
+    solicitud = get_object_or_404(Solicitud, pk=pk)
+    
+    return render(request, 'solicitudes/detalle.html', {
+        'solicitud': solicitud,
+    })

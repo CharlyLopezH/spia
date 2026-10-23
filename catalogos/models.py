@@ -27,6 +27,12 @@ class CatDiasConcepto(models.Model):
         help_text='Días que se asignan automáticamente al inicio de cada periodo. Si es 0, no se otorga.'
     )
 
+    max_dias_por_periodo = models.IntegerField(
+        'Máximo de días por periodo', null=True, blank=True,
+        help_text='Límite total que se puede solicitar de este concepto en el año. '
+                  'Dejar vacío para no aplicar límite.'
+    )
+
     contabiliza = models.BooleanField(
     'Contabiliza saldo', default=True,
     help_text='Si se marca, el concepto maneja saldo acumulable y aparece '
