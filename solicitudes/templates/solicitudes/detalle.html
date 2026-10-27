@@ -88,14 +88,41 @@
             </div>
         </div>
 
-        {# --- Área de Botones de Acción (Fase D) --- #}
+        {# --- Área de Botones de Acción (Fase D) --- #}        
         <div class="d-flex gap-2 justify-content-end">
-            {# Aquí irán los formularios de POST para Aprobar, Aplicar y Cancelar #}
-            <div class="alert alert-info w-100 mb-0 small">
-                <i class="bi bi-info-circle"></i> Los botones de <strong>Aprobar</strong>, <strong>Aplicar</strong> y <strong>Cancelar</strong> se habilitarán en el siguiente paso.
-            </div>
-        </div>
+            
+            {% if solicitud.estado == 'pendiente' %}
+                <form method="post" action="{% url 'solicitudes:aprobar' solicitud.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-check-circle"></i> Aprobar Solicitud
+                    </button>
+                </form>
+                
+            {% elif solicitud.estado == 'aprobada' %}
+                <form method="post" action="{% url 'solicitudes:aplicar' solicitud.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-down-circle"></i> Aplicar al Kardex
+                    </button>
+                </form>
 
+            {% elif solicitud.estado == 'aplicada' %}
+                <form method="post" action="{% url 'solicitudes:cancelar' solicitud.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm" 
+                            onclick="return confirm('¿Estás seguro de cancelar esta solicitud? Los días se devolverán al kardex del empleado.');">
+                        <i class="bi bi-x-circle"></i> Cancelar y devolver días
+                    </button>
+                </form>
+                
+            {% elif solicitud.estado == 'cancelada' %}
+                <div class="text-muted small">
+                    Esta solicitud fue cancelada. Los días ya fueron devueltos al kardex.
+                </div>
+            {% endif %}
+
+        </div>
     </div>
 </div>
 {% endblock %}

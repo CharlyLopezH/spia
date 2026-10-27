@@ -46,8 +46,7 @@ class SolicitudDetalleForm(forms.ModelForm):
         
         # Solo validamos fin de semana a nivel de fila
         if fecha and fecha.weekday() in (5, 6):
-            self.add_error('fecha', 'No se permiten sábados ni domingos.')
-            
+            self.add_error('fecha', 'No se permiten sábados ni domingos.')            
         return cleaned_data
 
 class BaseSolicitudDetalleFormSet(BaseInlineFormSet):

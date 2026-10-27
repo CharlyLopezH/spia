@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import Empleado
